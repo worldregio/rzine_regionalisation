@@ -213,22 +213,19 @@ mf_theme(x = "default")
 
 Les packages nécessaires pour réaliser la chaîne de traitement présentée sont les suivants :
 
--   `dplyr` pour la manipulation de donnée
+-   `dplyr` pour la manipulation de données
 -   `ggplot2` pour la construction de graphique
 -   `ggrepel` pour...
 -   `sf` pour la manipulation de données géographiques vectorielles
 -   `mapsf` pour la cartographie
 -   `RColorBrewer` pour des palettes de couleur
-
 -   `ineq` pour...
 -   `stargazer` pour...
 -   `spdep` pour...
 -   `adespatial` pour...
--   `cartogramR` ??
-
-
--   `cartography` = Essayer de supprimer son utilisation
--   `reshape2` = Essayer de supprimer son utilisation
+-   `cartogramR` pour...
+-   `cartography` ?? Essayer de supprimer son utilisation
+-   `reshape2` ?? Essayer de supprimer son utilisation
 
 Chargement des librairies :
 
@@ -252,7 +249,6 @@ library(cartography)
 
 # Packages statistique 
 library(ineq)
-library(stargazer)
 library(spdep)
 library(adespatial)
 
@@ -943,40 +939,45 @@ Préalablement à ces analyses, il est important d'analyser la distribution des 
 
 ## Analyse des listes
 
-Les électeurs français ont eu le choix entre 38 listes lors des élections européennes de juin 2024. Mais seule une partie d'entre elles a connu une audience nationale et beaucoup de petites listes n'ont même pas été capable de fournir des bulletins dans tous les bureaux de votes.
+Les électeurs français ont eu le choix entre 38 listes lors des élections européennes de juin 2024 (cf [données](a.-résultats-des-élections-européennes-de-2024)). Mais seule une partie d'entre elles a connu une audience nationale et beaucoup de petites listes n'ont même pas été capable de fournir des bulletins dans tous les bureaux de votes.
 
 ### Loi rang-taille ?
 
 La distribution du pourcentage de votes en fonction du rang des listes suit une loi exponentielle presque parfaite ($r^2 =0.98 , p < 0.001$)
 
 ```{r rang_taille}
-#| out.width: 90%
-#| results: asis
+#| fig.align: center
+#| out-width: 90%
+#| output: asis
 
-
-# métadonnées
+# Ensemble des listes électorales
 listes <- readRDS("data/net/don_listes.RDS")
 
-# Votes par circo
-don <- readRDS("data/net/don_circ.RDS")
-mat <- as.matrix(don[, 12:49])
-listes$pct <- 100 * apply(mat, 2, sum) / sum(mat)
-library(ineq)
-listes$gini <- apply(mat, 2, Gini)
+# Chargement des résultats de vote par circonscriptions
+don_cir <- readRDS("data/net/don_circ.RDS") 
+result_vote <- don_cir[, 12:49]
 
-# Hiérarchie
+# Calcul pourcentage total de vote
+listes$pct <- 100 * apply(result_vote, 2, sum) / sum(result_vote)
+
+# Calcul indice de Gini
+listes$gini <- apply(result_vote, 2, ineq::Gini)
+
+# Hiérarchie - Rang en fonction du pourcentage de vote
 listes$rang <- rank(-listes$pct)
+
+# Régression linéaire
 mod <- lm(log(listes$pct) ~ listes$rang)
 
-library(kableExtra)
-stargazer(
-  mod,
-  type = "html",
-  dep.var.labels = "% de votes reçus par une liste (log)",
-  dep.var.caption = "Variable dépendante",
-  covariate.labels = "Rang de la liste"
-)
+# Résumé statistique de la régression linéaire
+library(stargazer)
+stargazer(mod,
+          type = "html",
+          dep.var.labels = "% de votes reçus par une liste (log)",
+          dep.var.caption = "Variable dépendante",
+          covariate.labels = "Rang de la liste")
 
+# Graphique rang-taille
 ggplot(listes, aes(x = rang, y = pct, label = tete_nom)) +
   geom_point() +
   geom_line() +
@@ -995,29 +996,18 @@ La régularité de la loi précédente ne permet pas d'établir une rupture nett
 ```{r rang_taille_typo}
 #| out.width: 100%
 
+# Passage en logarithme du % national et l’indice de Gini
+tab_log <- cbind(log(listes$pct), listes$gini)
 
-# métadonnées
-listes <- readRDS("data/net/don_listes.RDS")
+# Classification par la méthode des k-means
+w <- kmeans(tab_log, centers = 2, iter.max = 1000)
 
-# Votes par circo
-don <- readRDS("data/net/don_circ.RDS")
-mat <- as.matrix(don[, 12:49])
-listes$pct <- 100 * apply(mat, 2, sum) / sum(mat)
-library(ineq)
-listes$gini <- apply(mat, 2, Gini)
-
-tab <- cbind(log(listes$pct), listes$gini)
-w <- kmeans(tab, centers = 2, iter.max = 1000)
+# Récupération de la classification
 listes$type <- as.factor(w$cluster)
-
 levels(listes$type) <- c("Listes nationales", "Listes mineures")
 
-ggplot(listes, aes(
-  x = pct,
-  y = gini,
-  label = tete_nom,
-  colour = type
-)) +
+# Représentation graphique
+ggplot(listes, aes(x = pct, y = gini, label = tete_nom, colour = type)) +
   geom_point() +
   geom_text_repel(cex = 3) +
   stat_ellipse() +
@@ -1025,24 +1015,24 @@ ggplot(listes, aes(
   scale_y_continuous("Indice de concentration de Gini") +
   theme_light() +
   ggtitle("Typologie des listes candidates aux élections européennes de juin 2024")
-
 ```
 
 ::: {.alert .alert-success role="alert"}
-Il existe une corrélation négative entre le score national d'une liste et sa concentration mesurée par l'indice de Gini. Les listes les plus impôrtantes sont en général celles qui sont le mieux réparties tandis que les petites listes ont en général concentrés les suffrages dans quelques circonscriptions. Cette règle connaît toutefois des exceptions. Ainsi la liste "*Alliance rurale*" conduite par Jean Lassalle, bien implanté dans le Sud-Ouest, a obtenu un score national assez élevé (2.4%) tout en affichant un indice de concentration assez fort (0.41). Inversement, la liste du parti NPA "*Pour un Monde sans fronières ni patrons ...*" conduite par Selma Labib a recuilli très peu de voix (0.16%) mais beaucoup mieux réparties dans un nombre important de ciconscriptions avec un indice de concentration faible (0.16) comparable à celui des listes les plus importantes.
+Il existe une corrélation négative entre le score national d'une liste et sa concentration mesurée par l'indice de Gini. Les listes les plus importantes sont en général celles qui sont le mieux réparties tandis que les petites listes ont en général concentrés les suffrages dans quelques circonscriptions. Cette règle connaît toutefois des exceptions. Ainsi la liste "*Alliance rurale*" conduite par Jean Lassalle, bien implanté dans le Sud-Ouest, a obtenu un score national assez élevé (2.4%) tout en affichant un indice de concentration assez fort (0.41). Inversement, la liste du parti NPA "*Pour un Monde sans frontières ni patrons ...*" conduite par Selma Labib n'a recueilli que très peu de voix (0.16%) mais beaucoup mieux réparties dans un nombre important de circonscriptions avec un indice de concentration faible (0.16) comparable à celui des listes les plus importantes.
 :::
 
 ## Classification
 
 ### Choix de la matrice de dissimilarité
 
-On choisit comme matrice de dissimilarité le coefficient de divergence c'est-à-dire la part des électeurs qui devraient changer de votes pour que les deux unités spatiales affichent le même profil électoral. Cet indice correspond à la moitié de la distance de Manhattan entre les profils en pourcentage :
+On choisit comme matrice de dissimilarité le coefficient de divergence c'est-à-dire la part des électeurs qui devrait changer de votes pour que les deux unités spatiales affichent le même profil électoral. Cet indice correspond à la moitié de la distance de Manhattan entre les profils en pourcentage :
 
 $$\frac{1}{2} \sum_{p=1}^{38} {|\frac{X_{ip}}{X_{i.}} - \frac{X_{jp}}{X_{j.}}|}$$
 
 On peut illustrer le calcul en prenant l'exemple de la plus forte dissimilarité qui est observée entre le département de l'Aisne (02) et le département de Paris (75) :
 
 ```{r dissimilarité}
+
 # Jointure
 map <- readRDS("data/net/map_dept.RDS")
 don <- readRDS("data/net/don_dept.RDS")
@@ -1291,7 +1281,7 @@ regio <- constr.hclust(d = dissim,
                        coords = ctr)
 
 
-# Tracele fonds de carte et les dsicontinuités
+# Tracele fonds de carte et les discontinuités
 mf_map(mapdon$geometry, type="base", col="white",border="black",lwd=0.2)
 mf_map(maplim, type="prop", col="gray50",var="DSij", lwd_max = 5,leg_pos = "left", add=T)
 mf_layout("Relation entre régionalisation et dsicontinuités",frame=T)
@@ -1656,7 +1646,7 @@ Le changement d'échelle ne modifie donc pas radicalement les conclusions obtenu
 
 # Annexes {.unnumbered}
 
-### Préparation des données {#préparation-des-données .unnumbered}
+## Préparation des données {#préparation-des-données .unnumbered}
 
 #### A. Données tabulaires {.unnumbered}
 
@@ -1823,7 +1813,7 @@ kable(m, caption = "Description des listes")
 
 ```
 
-### Contrôle des données {.unnumbered}
+## Contrôle des données {.unnumbered}
 
 #### A. Agrégation {.unnumbered}
 
@@ -1859,6 +1849,8 @@ mapdon <- left_join(map_regi, don_regi) %>%
   mutate(vot = vot5, pct = 100 * vot5 / exp) %>%
   select(vot, pct)
 ```
+
+#### C. Cartographie {.unnumbered}
 
 ```{r carta_prepa_data}
 #| out.width: 80%
