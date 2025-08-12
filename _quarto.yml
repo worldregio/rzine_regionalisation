@@ -1,0 +1,41 @@
+project:
+  title: "rzine-template"
+  render: 
+    - index.qmd
+
+
+title: Classification et régionalisation
+subtitle: "Application aux résultats des élections européennes de 2024 en France métropolitiane"
+date: today
+# date-modified: last-modified
+author:
+  - name: "Claude Grasland"
+    affiliations:
+      - name: "UMR 8504 Géographie-cités, Université Paris Cité "
+        url: "https://geographie-cites.cnrs.fr/"
+    orcid: 0000-0003-1504-4965
+
+
+keywords: [Classification, régionnalisation]
+abstract: |
+     La combinaison des méthodes de classification et de régionalisation est facilitée par le développement d’une nouvelle fonction du package `adespatial` qui permet de regrouper les unités spatiales les plus ressemblantes en respectant la contrainte de connexité. Mis au point par des écologues canadien, cette méthode de classification ascendante hiérarchique avec contrainte de contiguïté est beaucoup plus simple d’emploi et beaucoup plus efficace que les autres méthodes de régionalisation disponible actuellement dans le package Rgeoda. Elle s’appuie sur un corpus théorique d’analyse spatiale de la biodiversité des espaces animales ou végétales que l’on peut transposer à de nombreux problèmes géographiques. Nous prenons ici comme exemple l’analyse du résultat des élections européennes de 2024 en Frandce à trois niveaux d’agrégation : régions adminisratives , départements et circonscriptions législatives.
+draft: true # set to false once the build is running
+published: false 
+doi: "10.xxxx/xxx-xxx"
+
+other-links:
+  - text: Code source
+    icon: github
+    href: "https://github.com/rzine-reviews/rzine_regionalisation"
+
+embed-resources: true
+lang: fr-FR 
+repo: "template"
+toc-depth: 2
+
+format:
+  rzine-html: default
+  rzine-pdf: default
+
+
+
