@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo=TRUE,
 
 ```
 
-# Introduction
+# Introduction  {.unnumbered}
 
 Les géographes français qui sont confrontés à l'analyse d'un ensemble de variables décrivant un ensemble de lieux vont le plus souvent procéder à une analyse en deux étapes combinant analyse factorielle et classification ascendante hiérarchique (CAH). Si les variables sont hétérogènes (différentes unités de mesure) ils utiliseront une analyse en composantes principales sur le tableau des variables standardisées suivi d'une CAH en métrique euclidienne. Si les variables forment un tableau de contingence, il pourront appliquer les méthode précédentes sur un tableau de profils en ligne (standardisés ou non) ou bien opter pour le couplage entre analyse factorielle des correspondances et classification ascendante hiérarchique en métrique du chi-2. Ces approches qui s'inscrivent dans la tradition de l'analyse des données "*à la française*" ont été formalisées initialement par les travaux de @benzecri1973, puis popularisés en géographie par l'ouvrage de @sanders1989 et finalement mis à la disposition d'un large public grâce à l'excellent package FactomineR [@lê2008] et les publications de ses auteurs, notamment @husson2016. Les avantages du couplage entre les deux approches sont évidents puisque les méthodes factorielles permettent d'analyser d'abord les corrélations entre les colonnes du tableaux avant de procéder au regroupement des lignes à l'aide de la CAH [@husson2010].
 
@@ -39,14 +39,14 @@ L'objectif du présent article est de discuter l'intérêt de cette procédure p
 
 -   **L'échelle des ciconcriptions** permettra d'examiner l'intérêt d'une approche multiscalaire et de souligner les difficultés de la régionalisation lorsque le phénomène change de nature en fonction du niveau d'agrégation.
 
-## Données utilisées {#données-utilisées}
+## Données utilisées {.unnumbered}
 
 Pour faciliter la démonstration, les données brutes utilisées (**résultats des élections européennes de 2024**, fonds de carte et table de correspondance) ont été simplifiées (cf. [Annexes](#préparation-des-données)). La mise en pratique présentée est réalisée à partir des données suivantes :
 
 #### A. **Résultats des élections** européennes de 2024 {.unnumbered}
 
 ::: panel-tabset
-##### Par **régions**
+##### Par **régions** 
 
 ```{r data1}
 #| echo: true
@@ -209,50 +209,43 @@ mf_theme(x = "default")
 ```
 
 
-## Packages nécessaires
+## Packages nécessaires  {.unnumbered}
 
 Les packages nécessaires pour réaliser la chaîne de traitement présentée sont les suivants :
 
 -   `dplyr` pour la manipulation de données
 -   `ggplot2` pour la construction de graphique
--   `ggrepel` pour...
+-   `ggrepel` pour la gestion des *labels* dans les graphiques `ggplot2` 
 -   `sf` pour la manipulation de données géographiques vectorielles
--   `mapsf` pour la cartographie
--   `RColorBrewer` pour des palettes de couleur
--   `ineq` pour...
--   `stargazer` pour...
--   `spdep` pour...
--   `adespatial` pour...
--   `cartogramR` pour...
--   `cartography` ?? Essayer de supprimer son utilisation
--   `reshape2` ?? Essayer de supprimer son utilisation
+-   `mapsf` pour la construction de carte thématique 
+-   `ineq` pour le calcul de l'indice de Gini
+-   `spdep` pour le calcul de matrices spatiales
+-   `adespatial` pour réaliser des classification à contrainte spatiale
+-   `cartogramR` pour construire des cartogramme (anamorphose)
 
 Chargement des librairies :
 
 ```{r packages}
 #| echo: true
-
+#| 
 # Packages utilitaires
-
 library(dplyr)
-library(reshape2)
 
-# packages graphiques
+# Graphiques
 library(ggplot2)
 library(ggrepel)
 
-# Packages cartographiques
+# Manipulation données géographiques
 library(sf)
-library(mapsf)
-library(RColorBrewer)
-library(cartography)
 
-# Packages statistique 
+# Cartographie
+library(mapsf)
+library(cartogramR)
+
+# Statistique 
 library(ineq)
 library(spdep)
 library(adespatial)
-
-# library(cartogramR)
 ```
 
 # Échelle régionale : principes de base
@@ -272,11 +265,11 @@ On calcule le pourcentage de suffrages exprimés pour les listes conduites par J
 code_reg <- c("IDF", "CVDL", "BOFC", "NORM", "HDFR", "GEST",
               "PDLO", "BRET", "NAQU", "OCCI","AURA", "PACA")
 
-don <- don_reg  %>%
+don <- don_reg  |>
         mutate(Bardella = 100 * vot5 / exp, 
                Marechal = 100 * vot3 / exp,
-               regi_code = code_reg)  %>%
-        select(regi, regi_code, regi_nom, Bardella, Marechal) %>%
+               regi_code = code_reg)  |>
+        select(regi, regi_code, regi_nom, Bardella, Marechal) |>
         arrange(regi)
 
 ```
@@ -455,8 +448,8 @@ Matrice des distances euclidiennes :
 #| out-width: 100%
 
 library(gt)
-data.frame(DS_eucl)  %>% gt(rownames_to_stub = T) %>%
-  tab_header(title = md("**Dissimilarité en distance euclidienne brute**")) %>%
+data.frame(DS_eucl)  |> gt(rownames_to_stub = T) |>
+  tab_header(title = md("**Dissimilarité en distance euclidienne brute**")) |>
   fmt_number(decimals = 1)
 ```
 
@@ -518,8 +511,8 @@ Matrice des distances euclidiennes standardisées :
 #| echo: false
 #| out-width: 100%
 
-data.frame(DS_eucl_std) %>% gt(rownames_to_stub = T) %>%
-  tab_header(title = md("**Dissimilarité en distance euclidienne standardisée**")) %>%
+data.frame(DS_eucl_std) |> gt(rownames_to_stub = T) |>
+  tab_header(title = md("**Dissimilarité en distance euclidienne standardisée**")) |>
   fmt_number(decimals = 1)
 ```
 
@@ -574,8 +567,8 @@ rownames(DS_Man_rnk) <- don$regi_code
 #| echo: false
 #| out-width: 100%
 
-data.frame(DS_Man_rnk) %>% gt(rownames_to_stub = T) %>%
-  tab_header(title = md("**Dissimilarité de Manhattan sur les rangs**")) %>%
+data.frame(DS_Man_rnk) |> gt(rownames_to_stub = T) |>
+  tab_header(title = md("**Dissimilarité de Manhattan sur les rangs**")) |>
   fmt_number(decimals = 0)
 ```
 
@@ -710,7 +703,7 @@ Pour bien comprendre la différence entre classification et régionalisation, il
 
 -   la **classification** fait appel implicitement à un *graphe complet* qui est non planaire et dans lequel toutes les fusions d'unités spatiales en classes sont autorisées, qu'elles soient voisines ou non, connexes ou non.
 
--   la **régionalisation** fait de son côté appel à un *graphe de contiguïté* qui est de type planaire et que l'on obtient - dans l'exemple présenté ici - en détectant les régions qui ont une frontière commune. Il est facile d'obtenir ce graphe en utilisant par exemple la fonction `poly2nb()` du package `spdep`.
+-   la **régionalisation** fait de son côté appel à un *graphe de contiguïté* qui est de type planaire et que l'on obtient - dans l'exemple présenté ici - en détectant les régions qui ont une frontière commune. Il est facile d'obtenir ce graphe en utilisant par exemple la fonction `st_intersects()` du package `sf`.
 
 ```{r graphes}
 #| out.width: 100%
@@ -746,7 +739,7 @@ rownames(mat_conti) <- mapdon$regi_code
 mat_conti[lower.tri(mat_conti, diag = TRUE)] <- FALSE
 
 # Construction d'un tableau de lien (i, j) de contiguïté
-reg_link_contig <- as.data.frame.table(mat_conti, responseName = "contig") %>% 
+reg_link_contig <- as.data.frame.table(mat_conti, responseName = "contig") |> 
                              filter(contig == TRUE)
 
 # Création de la couche géographique de liens
@@ -772,7 +765,7 @@ Il découle de ce qui précède une conséquence fondamentale qui est le fait qu
 -   Une **triangulation de Delaunay** pourrait par exemple être établie entre les centres des unités spatiales, qui aboutirait également à un graphe planaire mais ne respecterait pas forcément le critère de présence d'une frontière commune. On peut la réaliser facilement avec la fonction `tri2nb()` du package `spdep`.
 -   La **méthode des k plus proches voisins** pourrait également servir à déterminer pour chaque unité spatiale les k plus proches en prenant comme critère la distance à vol d'oiseau entre leurs centres. On réalise facilement le graphe à l'aide des fonctions `knearneigh()` et `knn()` du package `spdep`. On obtient alors un graphe non planaire mais où chaque unité spatial aurait des nombres de voisins plus proches que dans le cas du graphe de contiguïté (mais pas forcément égal).
 
-```{r}
+```{r triangulation de Delaunay}
 #| layout: [[50,50]]
 
 #### GRAPHE DE VOISINAGE (triangulation de Delaunay)
@@ -784,7 +777,7 @@ rownames(mat_contig_delaunay) <- mapdon$regi_code
 
 # Construction d'un tableau de lien (i, j) de contiguïté 
 reg_contig_delaunay <- as.data.frame.table(mat_contig_delaunay, 
-                                           responseName = "contig_voronoi") %>% 
+                                           responseName = "contig_voronoi") |> 
                                     filter(contig_voronoi > 0)
 
 # Création de la couche géographique de liens
@@ -811,7 +804,7 @@ rownames(mat_contig_kvoisins) <- mapdon$regi_code
 
 # Construction d'un tableau de lien (i, j) de contiguïté 
 mat_contig_kvoisins <- as.data.frame.table(mat_contig_kvoisins, 
-                                           responseName = "k_voisins") %>% 
+                                           responseName = "k_voisins") |> 
                                   filter(k_voisins > 0)
 
 # Création de la couche géographique de liens
@@ -950,32 +943,24 @@ La distribution du pourcentage de votes en fonction du rang des listes suit une 
 #| out-width: 90%
 #| output: asis
 
-# Ensemble des listes électorales
+# Chargement des métadonnées sur les listes électorales
 listes <- readRDS("data/net/don_listes.RDS")
 
 # Chargement des résultats de vote par circonscriptions
 don_cir <- readRDS("data/net/don_circ.RDS") 
 result_vote <- don_cir[, 12:49]
 
-# Calcul pourcentage total de vote
+# Calcul % national de vote
 listes$pct <- 100 * apply(result_vote, 2, sum) / sum(result_vote)
 
 # Calcul indice de Gini
 listes$gini <- apply(result_vote, 2, ineq::Gini)
 
-# Hiérarchie - Rang en fonction du pourcentage de vote
+# Calcul du rang en fonction du pourcentage de vote
 listes$rang <- rank(-listes$pct)
 
 # Régression linéaire
 mod <- lm(log(listes$pct) ~ listes$rang)
-
-# Résumé statistique de la régression linéaire
-library(stargazer)
-stargazer(mod,
-          type = "html",
-          dep.var.labels = "% de votes reçus par une liste (log)",
-          dep.var.caption = "Variable dépendante",
-          covariate.labels = "Rang de la liste")
 
 # Graphique rang-taille
 ggplot(listes, aes(x = rang, y = pct, label = tete_nom)) +
@@ -987,6 +972,23 @@ ggplot(listes, aes(x = rang, y = pct, label = tete_nom)) +
   geom_smooth(method = "lm") +
   theme_minimal() +
   ggtitle("Relation entre le % de voix et le rang des listes")
+```
+
+**Résumé statistique de la régression linéaire** :
+
+```{r rang_taille_stat}
+#| fig.align: center
+#| output: asis
+#| echo: false
+
+library(stargazer)
+stargazer(mod,
+          type = "html",
+          dep.var.labels = "% de votes reçus par une liste (log)",
+          dep.var.caption = "Variable dépendante",
+          covariate.labels = "Rang de la liste")
+
+
 ```
 
 ### Typologie
@@ -1002,11 +1004,11 @@ tab_log <- cbind(log(listes$pct), listes$gini)
 # Classification par la méthode des k-means
 w <- kmeans(tab_log, centers = 2, iter.max = 1000)
 
-# Récupération de la classification
+# Récupération de la classification (colonne "type")
 listes$type <- as.factor(w$cluster)
 levels(listes$type) <- c("Listes nationales", "Listes mineures")
 
-# Représentation graphique
+# Représentation graphique de la classification
 ggplot(listes, aes(x = pct, y = gini, label = tete_nom, colour = type)) +
   geom_point() +
   geom_text_repel(cex = 3) +
@@ -1031,29 +1033,42 @@ $$\frac{1}{2} \sum_{p=1}^{38} {|\frac{X_{ip}}{X_{i.}} - \frac{X_{jp}}{X_{j.}}|}$
 
 On peut illustrer le calcul en prenant l'exemple de la plus forte dissimilarité qui est observée entre le département de l'Aisne (02) et le département de Paris (75) :
 
-```{r dissimilarité}
+```{r difference}
+#| message: false
 
-# Jointure
-map <- readRDS("data/net/map_dept.RDS")
-don <- readRDS("data/net/don_dept.RDS")
-mapdon <- left_join(map, don)
-matdon <- as.matrix(st_drop_geometry(mapdon[12:49]))
-matdon <- 100 * matdon / apply(matdon, 1, sum)
-rownames(matdon) <- mapdon$dept
-colnames(matdon) <- listes$tete_nom
+# Chargement des résultats par département et d'un fond de carte
+map_dept <- readRDS("data/net/map_dept.RDS")
+don_dept <- readRDS("data/net/don_dept.RDS")
 
-# Dissimilarité
-dissim <- dist.ldc(matdon, method = "manhattan") / 2
+# Calcul répartition % de vote par département pour chaque liste
+result_vote_dep <- don_dept[, 11:48]
+mat_vote_dep <- 100 * result_vote_dep / apply(result_vote_dep, 1, sum) 
+rownames(mat_vote_dep) <- don_dept$dept
+colnames(mat_vote_dep) <- listes$tete_nom
 
-# Exemple
-x <- data.frame(t(matdon[c("02", "75"), ]))
-names(x) <- c("Aisne (02)", "Paris (75)")
-x$dif <- x[, 1] - x[, 2]
-x$difabs <- abs(x$dif)
-total <- apply(x, 2, sum)
-x <- rbind(x, total)
-row.names(x)[39] <- "Total"
-kable(x, digits = 1, )
+# Calcul des différences de entre le l'Aisne et Paris
+tab_diff <- data.frame(t(mat_vote_dep[c("02", "75"), ]))
+names(tab_diff) <- c("Aisne (02)", "Paris (75)")
+tab_diff$dif <- tab_diff[, 1] - tab_diff[, 2]
+# Différence absolue
+tab_diff$difabs <- abs(tab_diff$dif)
+
+# Calcul des totaux
+tab_diff <- rbind(tab_diff, apply(tab_diff, 2, sum))
+row.names(tab_diff)[nrow(tab_diff)] <- "Total"
+
+# Affichage de la table
+kable(tab_diff, digits = 1 )
+
+```
+
+```{r mat_dissimilarité}
+#| message: false
+#| warning: false
+
+# Calcul matrice de dissimilarité
+dissim <- dist.ldc(mat_vote_dep, method = "manhattan") / 2
+
 ```
 
 ::: {.alert .alert-success role="alert"}
@@ -1068,45 +1083,57 @@ L'application d'une méthode de classification ascendante hiérarchique à la ma
 #| out.width: 100%
 #| layout: [[55,45]]
 
-cah <- hclust(dissim, method = "ward.D")
+# Classification
+cah_dissim <- hclust(dissim, method = "ward.D")
 
-plot(cah,
-     hang = -1,
-     cex = 0.5,
-     main = "Arbre de classification")
-clas <- as.factor(cutree(cah, 5))
-mapdon$cah <- as.factor(clas)
-mf_map(mapdon,
-       type = "typo",
-       var = "cah",
-       leg_title = "Classes")
-mf_layout(
-  "Classification des départements",
+# Découpage en 5 classes
+clas_dissim <- as.factor(cutree(cah_dissim, 5))
+
+# Classe d'appartenance pour chaque département (fond de carte)
+map_dept$cah_dissim <- as.factor(clas_dissim)
+
+## A. Arbre CAH - Dissimilarité 
+plot(cah_dissim, hang = -1, cex = 0.5, main = "Arbre de classification")
+# ---
+
+# B. Carte - CAH - Dissimilarité 
+mf_map(map_dept, type = "typo", var = "cah_dissim", leg_title = "Classes")
+mf_layout("CAH - Dissimilarité - 5 classes - par département",
   credits = "Mehode de Ward appliquée à la distance de divergence",
-  frame = T,
-  scale = T,
-  arrow = F
-)
+  frame = TRUE, scale = TRUE, arrow = FALSE)
 ```
 
 Une analyse des profils permet ensuite de caractériser ces classes.
 
 ```{r ana_profil}
 
-tabres <- data.frame(matdon)
-tot <- as.numeric(tabres %>% summarise_all(.funs = c("mean")))
-tabres$clas <- clas
-res <- tabres %>% group_by(clas) %>% summarise_all(.funs = c("mean"))
+# Calcul % national de vote
+tabres <- data.frame(mat_vote_dep) 
+tot <- tabres |>  summarise_all(.funs = c("mean"))
+
+# Récupération de la classe d'appartenance
+tabres$clas_dissim <- clas_dissim
+
+# Moyenne % vote pour chaque classe
+res <- tabres |> group_by(clas_dissim) |> summarise_all(.funs = c("mean"))
+
+# Calcul écarts des classes au profil moyen
 mat <- res[, -1]
-
 for (i in 1:5) {mat[i, ] <- mat[i, ] - as.matrix(tot)}
-
-mat <- t(mat)
+mat <- as.data.frame(t(mat))
 colnames(mat) <- c("Classe1", "Classe2", "Classe3", "Classe4", "Classe5")
-mat <- as.data.frame(mat)
-mat$Profil <- tot
+
+# Ajout ligne de totaux
+mat$Profil <- as.numeric(tot)
+
+```
+
+**Écart des classes au profil moyen** (listes principales) :
+
+```{r ana_profil_table}
+#| echo: false
 mat <- mat[order(-mat$Profil), ]
-kable(mat[1:13, ], digits = 2, caption = "Ecart des classes au profil moyen (listes principales)")
+kable(mat[1:13, ], digits = 2)
 ```
 
 ::: {.alert .alert-success role="alert"}
@@ -1121,148 +1148,135 @@ kable(mat[1:13, ], digits = 2, caption = "Ecart des classes au profil moyen (lis
 
 ### Matrice de contiguïté
 
-On calcule la matrice de continguïté au niveau départemental à l'aide des fonctions`poly2nb()` et `nb2listw()`du package **spdep**. Puis on les viusalise cartographiquement.
+On calcule la matrice de contiguïté au niveau départemental à l'aide du package `sf`. Puis, on les visualise cartographiquement.
 
 ```{r mat_contig}
-#| out-width: 80%
+#| out-width: 90%
 #| fig-align: center
 
 
-# Contiguïté
-cont <- poly2nb(mapdon)
-contw <- nb2listw(cont)
-
-# Extrait les liens
-linky <- nb2mat(cont)
-matlink1 <- linky
-matlink1[linky > 0] <- 1
-colnames(matlink1) <- row.names(matlink1)
-link1 <- melt(matlink1) %>% filter(value > 0) %>% select(i = Var1, j = Var2)
+mapdon_dept <- left_join(map_dept, don_dept)
 
 
-## Calcule les centroïdes
-mapctr <- st_centroid(mapdon)
-ctr <- st_coordinates(mapctr)
+#### GRAPHE DE VOISINAGE (contiguité)
+# Calcul matrice de contiguïté
+mat_conti <- st_intersects(mapdon_dept, mapdon_dept, sparse = FALSE)
+colnames(mat_conti) <- mapdon_dept$dept
+rownames(mat_conti) <- mapdon_dept$dept
 
-# Visualise le graphe
-mf_map(mapdon, type = "base", col = "lightyellow")
-segments(ctr[link1[, 1], 1] , ctr[link1[, 1], 2], ctr[link1[, 2], 1] , ctr[link1[, 2], 2], col =
-           "red")
-#mf_map(mapctr, type="base",pch=20,col="white", add=T, cex=5)
-mf_label(
-  mapctr,
-  var = "dept",
-  col = "blue",
-  cex = 0.7,
-  halo = T,
-  bg = "white"
-)
-mf_layout("Matrice de contiguïté départementale",
-          frame = T,
-          credits = "Grasland C., 2025")
+# Suppression de la moitié de la matrice (et de la diagonale)
+mat_conti[lower.tri(mat_conti, diag = TRUE)] <- FALSE
+
+# Construction d'un tableau de lien (i, j) de contiguïté
+reg_link_contig <- as.data.frame.table(mat_conti, responseName = "contig") |> 
+                             filter(contig == TRUE)
+
+# Création de la couche géographique de liens
+reg_links_contig  <- mf_get_links(x = mapdon_dept, 
+                                  df = reg_link_contig, 
+                                  x_id = "dept", 
+                                  df_id = c("Var1","Var2"))
+     
+# Cartographie
+mf_map(mapdon_dept)
+mf_map(reg_links_contig , col = "red3", add = TRUE)
+mf_label(mapdon_dept, var = "dept", col = "blue3", halo = TRUE, bg = "white")
+mf_layout("Graphe de voisinage", frame = TRUE, credits = "Grasland C., 2025")
 ```
 
 ### Dissimilarités locales
 
-Avant de procéder à la régionalisation, on peut visualisser les discontinuités en extrayant les frontières des unités spatiales à l'aide de la fonction `getBorders()`du package **cartography** et en effectuant une jointure avec les valeurs de dissimilarité [@grasland1997]. On pourra ainsi repérer les limites qui séparent des départements très ressemblants (donc susceptibles de se regrouper en régions) ou au contraire très différents (qui seront probablement localisés dans des régions différentes).
+Avant de procéder à la régionalisation, on peut visualisser les discontinuités en extrayant les frontières des unités spatiales à l'aide de la fonction `mf_get_borders()`du package `mapsf` et en effectuant une jointure avec les valeurs de dissimilarité [@grasland1997]. On pourra ainsi repérer les limites qui séparent des départements très ressemblants (donc susceptibles de se regrouper en régions) ou au contraire très différents (qui seront probablement localisés dans des régions différentes).
 
-```{r local_dissimilaritye}
-#| out-width: 80%
+```{r local_dissimilarite}
+#| out-width: 90%
 #| fig-align: center
 
-# Met en colonnes la matrice de dissimilarité
+# Conversion de la matrice de dissimilarité en tableau long
 m <- as.matrix(dissim)
-tabdis <- melt(m, as.is = TRUE)
-names(tabdis) <- c("i", "j", "DSij")
+tab_dis <- cbind(expand.grid(dimnames(m)), value = as.vector(m))
+names(tab_dis ) <- c("i", "j", "DSij")
 
-# Extrait les frontières d'unités spatiale
-#library(cartography)
-maplim <- getBorders(mapdon)
-names(maplim) <- c("codelim", "i", "j", "geometry")
+# Extraction des frontières d'unités spatiale
+map_border_dep <- mf_get_borders(mapdon_dept)[, c("dept", "dept.1")]
+names(map_border_dep) <- c("i", "j", "geometry")
 
-# Effectue la jointure
-maplim <- merge(maplim, tabdis, by = c("i", "j"))
+# Jointure
+map_border_dep <- merge(map_border_dep, tab_dis, by = c("i", "j"))
 
-
-# Visualise les dissimilarités les plus fortes
-mf_map(mapdon, type = "base", col = "lightyellow")
-mf_map(
-  maplim,
-  type = "prop",
-  col = "red",
-  var = "DSij",
-  val_max = 70,
-  leg_pos = "left"
-)
-mf_layout("Cartographie des discontinuités",
-          frame = T,
-          credits = "Grasland C., 2025")
-
-
+# Cartographie des dissimilarités les plus fortes
+mf_map(mapdon_dept, type = "base", col = "lightyellow")
+mf_map(map_border_dep,
+       type = "prop",
+       col = "red",
+       var = "DSij",
+       val_max = 70,
+       leg_pos = "left")
+mf_layout("Cartographie des discontinuités", frame = TRUE, credits = "Grasland C., 2025")
 ```
 
 ::: {.alert .alert-success role="alert"}
-Les discontinuités les plus remarquables sont celles qui séparent les départements d'Ile-de-France du reste du Bassin Parisien (ex. dissimilarité de 26 points entre Yvelines et Eure) mais aussi les départements franciliens entre eux (ex. dissimilarité de 33 points entre Seine-Saint-Denis et Paris). On retrouve également de très fortes différences entre les départements qui abritent les grandes métropoles de province (Lyon, Toulouse, Nantes, Lille, ...) et leurs voisins. Mais il apparaît également des discontinuités entre certains départements plus ruraux. A l'inverse, on reprère des groupes de départements peu différents les uns des autres dans les Alpes, le sud du Bassin Parisien ou le Centre-Ouest. La carte des discontinuités permet donc d'anticiper les regroupements les plus probables qui vont intervenir au cours de l'étape de régionalisation.
+Les discontinuités les plus remarquables sont celles qui séparent les départements d'Ile-de-France du reste du Bassin parisien (ex. dissimilarité de 26 points entre Yvelines et Eure) mais aussi les départements franciliens entre eux (ex. dissimilarité de 33 points entre Seine-Saint-Denis et Paris). On retrouve également de très fortes différences entre les départements qui abritent les grandes métropoles de province (Lyon, Toulouse, Nantes, Lille, ...) et leurs voisins. Mais il apparaît également des discontinuités entre certains départements plus ruraux. A l'inverse, on repère des groupes de départements peu différents les uns des autres dans les Alpes, le sud du Bassin Parisien ou le Centre-Ouest. La carte des discontinuités permet donc d'anticiper les regroupements les plus probables qui vont intervenir au cours de l'étape de régionalisation.
 :::
 
 Une approche différentes, proposée par les écologues, consiste à mesurer la contribution des unités spatiales et des variables les décrivant à la production des dissimilarités au niveau global et local. Cette approche est classiquement menée à l'aide de mesures basées sur la **variance,** mais les auteurs proposent de la généraliser à **une mesure quelconque de dissimilarité** ce qui permet une meilleure adéquation à la problématique [@legendre2013]. Et qui permet d'appliquer la méthode non pas à l'ensemble des dissimilarités (comme dans une ACP ou une CAH) mais uniquement aux dissimilarités locales.
 
 ### Résultats de la regionalisation
 
-La réalisation d'une régionalisation ascendante hiérarchique est très simple avec la focntion `constr.hclust()`du package `adespatial`. Il faut juste transformer au préalable la matrice de voisinage créé par spdep en une fonction de proximité propre à ce logiciel à l'aide de la fonction `listw2sn()`. On obtient alors un objet de type *hclust* comparable à celui que l'on a obtenu en réalisant une classification et utilisant exactement les mêmes paramètres de dissimilarité et d'algorithme de regroupement. On peut donc classiquement visualiser l'arbre de classification et examiner la hiérarchie des noeuds afin de choisir le nombre optimal de régions.
+La réalisation d'une régionalisation ascendante hiérarchique est très simple avec la fonction `constr.hclust()`du package `adespatial`. 
 
 ```{r result_regio}
 #| out.width: 100%
 #| layout: [[50,50]]
 
-neighbors <- listw2sn(contw)[, 1:2]
-regio <- constr.hclust(d = dissim, method = "ward.D", links = neighbors)
+# Régionalisation ascendante hiérarchique
+regio <- constr.hclust(d = dissim, method = "ward.D", links = reg_link_contig)
 
+# Arbre de classification
 plot(regio,
      main = "Arbre de classification",
      hang = -1,
      cex = 0.7)
+# ---
 
-barplot(
-  rev(regio$height)[1:20],
-  main = "Hiérarchie des noeuds",
-  names.arg = 1:20,
-  cex.names = 0.4
-)
-
+# Hiérarchie des noeuds
+barplot(rev(regio$height)[1:20],
+        main = "Hiérarchie des noeuds",
+        names.arg = 1:20,
+        cex.names = 0.4)
 ```
 
 ::: {.alert .alert-success role="alert"}
 L'arbre de classification et l'indice de hiérarchie des noeuds mettent tout d'abord en valeur les partitions en 2, 3 ou 4 classes qui se détachent très clairement des regroupements ultérieurs. On observe toutefois que la régionalisation en 2 classes est moins efficaces que la partition en deux classes ce qui peut suprendre un utilisateur habitué à utiliser des méthodes fondées sur la distance euclidienne au carré et la variance. Ce résulat est en fait logique dans la mesure où nouss avons utilisé une métrique non euclidienne [@guénard2022]. Dans notre exemple, il signale que le premier niveau de découpage de la France en régions électoral n'est pas une oppostion nord-est/sud-ouest mais un découpage en trois entités qui isole la région Ile-de-France. Quant au découpage en quatre régions, il met en valeur à l'intérieur de la France du nord-est le cas de la partie nord et est du bassin parisien qui est singulièrement différente du reste de la France du Nord-Est. Au delà de cette partition en quatre classes, on observe une suite de partition de niveau voisins jusqu'au 9e noeuds de l'arbre où apparaît une discontinuité nette, ce qui incite à retenir une partition en 10 régions. Le niveau de dissimilarité de ce découpage en 10 régions sera approximativment le même que celui que nous avios utilisé précédemment pour réaliser une classification comportant cinq classes. Ce qui confirme qu'une régionalisation est par définition moins efficace qu'une classification puisqu'elle doit comporter deux fois plus de groupes pour aboutir au même niveau d'homogénéité.
 :::
 
-On peut représenter les quatre niveaux de régionalisation en effectuant un découpage de l'arbre à l'aide de la fonction `cutree` et d'un logiciel quelconque de cartographie thématique dans R comme **mapsf**.
+On peut représenter les quatre niveaux de régionalisation en effectuant un découpage de l'arbre à l'aide de la fonction `cutree()` et d'un logiciel quelconque de cartographie thématique dans R comme `mapsf`.
 
 ```{r, cartograhie}
 #| out.width: 100%
 #| layout: "[[50,50],[50,50],[50,50]]"
 
 
-mapdon$reg2 <- as.factor(cutree(regio, 2))
-mapdon$reg3 <- as.factor(cutree(regio, 3))
-mapdon$reg4 <- as.factor(cutree(regio, 4))
-mapdon$reg10 <- as.factor(cutree(regio, 10))
+mapdon_dept$reg2 <- as.factor(cutree(regio, 2))
+mapdon_dept$reg3 <- as.factor(cutree(regio, 3))
+mapdon_dept$reg4 <- as.factor(cutree(regio, 4))
+mapdon_dept$reg10 <- as.factor(cutree(regio, 10))
 
 
-mf_map(mapdon, var="reg2",type="typo", leg_title = "Classes")
-mf_layout("2 régions",credits = "", scale=T, frame=T, arrow=F)
+mf_map(mapdon_dept, var="reg2",type="typo", leg_title = "Classes")
+mf_layout("2 régions", credits = "", scale=TRUE, frame=TRUE, arrow=FALSE)
 #---
 
-mf_map(mapdon, var="reg3",type="typo", leg_title = "Classes")
-mf_layout("3 régions",credits = "", scale=T, frame=T, arrow=F)
+mf_map(mapdon_dept, var="reg3",type="typo", leg_title = "Classes")
+mf_layout("3 régions", credits = "", scale=TRUE, frame=TRUE, arrow=FALSE)
 #---
 
-mf_map(mapdon, var="reg4",type="typo", leg_title = "Classes")
-mf_layout("4 régions",credits = "", scale=T, frame=T, arrow=F)
+mf_map(mapdon_dept, var="reg4",type="typo", leg_title = "Classes")
+mf_layout("4 régions", credits = "", scale=TRUE, frame=TRUE, arrow=FALSE)
 #---
 
-mf_map(mapdon, var="reg10",type="typo", leg_title = "Classes")
-mf_layout("10 régions",credits = "", scale=T, frame=T, arrow=F)
+mf_map(mapdon_dept, var="reg10",type="typo", leg_title = "Classes")
+mf_layout("10 régions", credits = "", scale=TRUE, frame=TRUE, arrow=FALSE)
 ```
 
 Mais on peut également utiliser la fonction `plot:constr.hclust()` du package `adespatial` à condition de lui fournir les centroïdes des unités spatiales. On peut alors visualiser la façon dont le graphe de contiguïté a été segmenté pour aboutir à une régionalisation. Il est alors intéressant d'y superposer la carte des discontinuités pour mieux voir comment les régions réspectent dans la mesure du possible les frontières correspondant aux plus fortes différences entre unités voisines.
@@ -1271,63 +1285,78 @@ Mais on peut également utiliser la fonction `plot:constr.hclust()` du package `
 #| out-width: 100%
 #| fig-align: center
  
-# Calcule les centroïdes
-ctr <- st_coordinates(st_centroid(mapdon))
+# Extraction des coordonnées des centroïdes des départements
+dep_centroide <- st_coordinates(st_centroid(mapdon_dept))
 
 # Régionalise
 regio <- constr.hclust(d = dissim,
                        method = "ward.D",
-                       links = neighbors,
-                       coords = ctr)
+                       links = reg_link_contig,
+                       coords = dep_centroide)
 
 
-# Tracele fonds de carte et les discontinuités
-mf_map(mapdon$geometry, type="base", col="white",border="black",lwd=0.2)
-mf_map(maplim, type="prop", col="gray50",var="DSij", lwd_max = 5,leg_pos = "left", add=T)
-mf_layout("Relation entre régionalisation et dsicontinuités",frame=T)
-plot(regio,k = 10,links = TRUE,axes = F,plot = FALSE,hybrids = "no")
-
-
+# Trace le fonds de carte et les discontinuités
+mf_map(mapdon_dept, type="base", col="white",border="black",lwd=0.2)
+mf_map(map_border_dep,
+       type = "prop",
+       col = "gray50",
+       var = "DSij",
+       lwd_max = 5,
+       leg_pos = "left",
+       add = TRUE)
+mf_layout("Relation entre régionalisation et dsicontinuités", frame = TRUE)
+plot(regio, k = 10, links = TRUE, axes = FALSE, plot = FALSE, hybrids = "no")
 ```
 
-On procède maintenant à l'analyse des écarts au profil moyen en reprenant la même procédure que pour la classification. Pour faciliter l'analyse, on recode les noms de régions pour combiner les partitions en trois régions (Nord-Est = NE, Sud-Ouest = SO, Ile-de-France = IF) et la partition en 10 (les quatres sous-régions du Nord-Est sont codées NE1,NE2,NE3,NE4, les trois régions du Sud-Ouest SO1, SO2, SO3 et les trois régions d'Ile-de-France IF1, IF2,IF3)
+On procède maintenant à l'analyse des écarts au profil moyen en reprenant la même procédure que pour la classification. Pour faciliter l'analyse, on recode les noms de régions pour combiner les partitions en trois régions (Nord-Est = NE, Sud-Ouest = SO, Ile-de-France = IF) et la partition en 10 (les quatres sous-régions du Nord-Est sont codées NE1, NE2, NE3, NE4, les trois régions du Sud-Ouest SO1, SO2, SO3 et les trois régions d'Ile-de-France IF1, IF2, IF3)
 
 ```{r ecart_profil_moy}
 
-tabres <- data.frame(matdon)
-tot <- as.numeric(tabres %>% summarise_all(.funs = c("mean")))
-tabres$clas <- cutree(regio, 10)
-res <- tabres %>% group_by(clas) %>% summarise_all(.funs = c("mean"))
+# Suppression colonne classification précédente
+tabres <- tabres[, -39]
+
+# Ajout classification en 10 classe
+tabres$clas_10 <- cutree(regio, 10)
+
+# calcul moyennes des classes
+res <- tabres |> group_by(clas_10) |> summarise_all(.funs = c("mean"))
 mat <- res[, -1]
-for (i in 1:10) {
-  mat[i, ] <- mat[i, ] - as.matrix(tot)
-}
-mat <- t(mat)
-colnames(mat) <- c("NE1",
-                   "NE2",
-                   "NE3",
-                   "NE4",
-                   "SO1",
-                   "SO2",
-                   "SO3",
-                   "IDF1",
-                   "IDF2",
-                   "IDF3")
-mat <- as.data.frame(mat)
-mat$Profil <- tot
-mat <- mat[order(-mat$Profil), ]
-kable(mat[1:13, ], digits = 2, caption = "Ecart des régions au profil moyen (listes principales)")
+
+# Calcul écarts des classes au profil moyen
+for (i in 1:10) {mat[i, ] <- mat[i, ] - as.matrix(tot)}
+
+# Transposition de la matrice to dataframe
+mat <- as.data.frame(t(mat))
+
+# Renommage des colonnes
+colnames(mat) <- c("NE1","NE2","NE3","NE4",
+                   "SO1","SO2","SO3",
+                   "IDF1","IDF2","IDF3")
+
+# Ajout ligne de totaux
+mat$Profil <- as.numeric(tot)
+
 ```
 
+**Écart des régions au profil moyen** (listes principales) :
+
+```{r ana_profil_reg_table}
+#| echo: false
+mat <- mat[order(-mat$Profil), ]
+kable(mat[1:13, ], digits = 2)
+```
+
+
+
 ::: {.alert .alert-success role="alert"}
-Trois des quatre sous-régions qui composent la région Nord-Est se caractérisent par une surreprésention générale des votes pour les listes de droite (Bellamy) ou d'extrême-droite (Bardella, Maréchal).
+Trois des quatre sous-régions qui composent la région Nord-Est se caractérisent par une surreprésentation générale des votes pour les listes de droite (Bellamy) ou d'extrême-droite (Bardella, Maréchal).
 
 -   La **région NE1 de type droite et extrême droite** occupe les franges sud du bassin parisien ainsi que l'Alsace et le nord de la Lorraine. Elle se caractérise par une légère sur-représentation du vote Bardella (+2.57) combinée à une sur-représentation des autres votes de droite (Bellamy +0.48, Hayer +0.29, Maréchal +0.11, Philippot +0.07) et une sous-représentaiton des listes de gauche (Glucksman -1.49, Aubry -1.12, Toussaint -0.62).
 -   la **region NE2 de type bastion RN rural et ouvrier** occupe le nord et l'est du bassin parisien de la Normandie à la Lorraine en passant par le Nord et la Champagne. Sa caractéristique principale est un score exceptionnellement élevé pour la liste Bardella (+9.65) et une faiblesse relative de toutes les autres listes à l'exception de la liste Thouy du parti animaliste.
 -   la région **NE3 de type bastion d'extrême-droite diversifié** correspond à un vote d'extrême droite mélangeant davantage le vote RN de la liste Bardella (+4.04) avec d'autres avatars de l'extrême-droite se traduisant par une surreprésentation des listes Maréchal (+1.12), Asselineau (+0.13) ou Philippot (+0.12). Comme dans le cas précédent, les autres listes de droite classique ou de gauche sont sous-représentés à l'exception de la liste Aubry (+0.2).
 -   la région **NE4 de type métropolitain écologiste** constitue une enclave à l'intérieur de la région NE regroupant la métropole Lyonnaise et le nord des Alpes. Elle affiche des caractéristiques très différentes voire opposées aux types prédédents. Elle se caractéristique par un score très élevé des écologistes (Toussaint +2.32, Gobernatori +0.23), ainsi que des partis de gauche (Aubry : +1.11) de centre-gauche (Glucksman +1.15) et de centre-droit (Hayer +0.67). Le vote Bardella y est nettement sous-représenté (-4.51) mais pas le vote de droite (Bellamy +0.33) ou d'extrême droite dans d'autres versions (Maréchal +0.37, Asselineau +0.09).
 
-La région Sud-Ouest affiche un profil général très différent caractérisé par la faiblesse conjointe des votes d'extrême-droite (Bardella, Maréchal) et d'extrême-gauche et une surreprésentation des listes portées par les partis centristes de gouvernement (Hayer, Glucksman). Mais elle affiche trois variantes bien typées en raison du rôle de deux listes à forte composante régionale. - la région **SO1 de type identité régionale sud-ouest** regroupe les départements situés au Nord des Pyrénées, du pays Basque à Toulouse. Son originalité fondamentale réside dans le poids exceptionnel du vote pour la liste Alliance Rurale portée par Jean Lassalle (+3.69) combinée par un vote très élevé pour les listes socialistes (Glucksman +3.62) et communiste (Deffontaines +0.42). - la région **SO2 de type radical-socialiste** prolonge la région précéente vers le massif central, exception faite de la vallée de la Garonne acquise à l'extrême-droite. Elle conserve des caractéristiqes voisines de S01 mais en moins accentué. Elle aurait probablement fusionné avec la précédente sans l'obstacle constitué par les départements conquis par l'extrême-droite qui font obstacle à l'unification en une seule région. - la région **SO3 de type ouest chrétien-démocrate** associe les départements de Bretagne, Pays de Loire, Basse Normandie et nord de l'Aquitaine. Elle affiche une forte résistance au vote d'extrême-droite (Bardella -5.42, Maréchal -0.70) comme d'extrême-gauche (Aubry -1.54, Deffontaines -0.36) et concentre ses suffrages sur les listes des partis de centre-gauche (Glucksmann +2.81), de centre-droit (Hayer +3.59) ansi que les écologistes (Toussaint +1.45, Governatori +0.18)
+La région Sud-Ouest affiche un profil général très différent caractérisé par la faiblesse conjointe des votes d'extrême-droite (Bardella, Maréchal) et d'extrême-gauche et une surreprésentation des listes portées par les partis centristes de gouvernement (Hayer, Glucksman). Mais elle affiche trois variantes bien typées en raison du rôle de deux listes à forte composante régionale. - la région **SO1 de type identité régionale sud-ouest** regroupe les départements situés au Nord des Pyrénées, du pays Basque à Toulouse. Son originalité fondamentale réside dans le poids exceptionnel du vote pour la liste Alliance Rurale portée par Jean Lassalle (+3.69) combinée par un vote très élevé pour les listes socialistes (Glucksman +3.62) et communiste (Deffontaines +0.42). - la région **SO2 de type radical-socialiste** prolonge la région précédente vers le massif central, exception faite de la vallée de la Garonne acquise à l'extrême-droite. Elle conserve des caractéristiques voisines de S01 mais en moins accentué. Elle aurait probablement fusionné avec la précédente sans l'obstacle constitué par les départements conquis par l'extrême-droite qui font obstacle à l'unification en une seule région. - la région **SO3 de type ouest chrétien-démocrate** associe les départements de Bretagne, Pays de Loire, Basse Normandie et nord de l'Aquitaine. Elle affiche une forte résistance au vote d'extrême-droite (Bardella -5.42, Maréchal -0.70) comme d'extrême-gauche (Aubry -1.54, Deffontaines -0.36) et concentre ses suffrages sur les listes des partis de centre-gauche (Glucksmann +2.81), de centre-droit (Hayer +3.59) ainsi que les écologistes (Toussaint +1.45, Governatori +0.18)
 
 La région Ile-de-France forme la troisième région, caractérisée par une résistance générale au vote d'extrême droite et une performance exceptionnellement élevée de la liste LFI portée par Aubry. Elle n'en comporte pas moins de très forts contrastes internes.
 
@@ -1340,7 +1369,7 @@ Quels sont les apports respectifs des deux approches de régionalisation et de c
 
 ### Intérêt et limites de la classification
 
-L'analyse de classification offre obligatoirement un meilleur résumé de l'information contenue dans la matrice de dissimilarité dans la mesure où elle ne subit pas la contrainte de contiguïté qui est imposée à la régionalisation. Même si la méthode de classification ascendante hhiérarchique n'aboutit pas nécessairement à une solution optimale en matière de maximisation de l'homogénéité intra-classe et de l'hétérogénéité inter-classe (la méthode des k-means est a priori plus efficace mais plus coûteuse en temps de calcul), elle présente l'avantage de fournir des résumés à différents niveaux d'agrégation et de distinguer des types et des sous-types à l'intérieur de ceux-ci.
+L'analyse de classification offre obligatoirement un meilleur résumé de l'information contenue dans la matrice de dissimilarité dans la mesure où elle ne subit pas la contrainte de contiguïté qui est imposée à la régionalisation. Même si la méthode de classification ascendante hiérarchique n'aboutit pas nécessairement à une solution optimale en matière de maximisation de l'homogénéité intra-classe et de l'hétérogénéité inter-classe (la méthode des k-means est a priori plus efficace mais plus coûteuse en temps de calcul), elle présente l'avantage de fournir des résumés à différents niveaux d'agrégation et de distinguer des types et des sous-types à l'intérieur de ceux-ci.
 
 La limite de la méthode concerne sa visualisation cartographique qui laisse apparaître des blocs régionaux mais qui correspondent rarement à une classe unique. Les résultats n'ont pas vocation à produire une géographie du vote même si le commentaire des résultats fait appel à des notions de proximité et de localisation.
 
@@ -1375,89 +1404,101 @@ L'auteur précise que la carte combine en fait des variables de niveau (structur
 
 > Cette carte a été construite à l’aide d’une Classification Ascendante Hiérarchique. Elle synthétise 9 variables décrivant la structure du vote en 2022 (abstention, vote blanc, vote pour chaque famille politique) et 9 variables similaires décrivant l’évolution du vote entre 2017 et 2022. Ces variables sont toutes standardisées et décrivent donc pour les 9 premières des écarts par rapport au vote de l’ensemble des intercommunalités, pour les 9 suivantes des variations positives ou négatives par rapport à l’évolution constatée au niveau de l’ensemble des intercommunalités. Source : Finance O., 2022, [Cybergeo Conversation](https://cybergeo.hypotheses.org/1199)
 
-La structure obtenue combine à la fois un archipel métropolitain (classe représentée en rouge) et des blocs régionaux bien identifiables indiquant une forte autocorrélation spatiale des votes dans les espaces non métropolitains.
+La structure obtenue combine à la fois un archipel métropolitain (classe représentée en rouge) et des blocs régionaux bien identifiables indiquant une forte auto-corrélation spatiale des votes dans les espaces non métropolitains.
 :::
 
-## Données
+## Matrice de dissimilarité
 
-On charge les fichiers de circonscriptions en con construit la matrice de dissimilarité en utilisant la même procédure que pour les départements.
+On charge les fichiers de circonscriptions et on construit la matrice de dissimilarité en utilisant la même procédure que pour les départements (cf. [partie 2.2](#choix-de-la-matrice-de-dissimilarité)).
 
-```{r data_part4}
-# Jointure
-map <- readRDS("data/net/map_circ.RDS")
-don <- readRDS("data/net/don_circ.RDS")
-mapdon <- left_join(map, don)
-matdon <- as.matrix(st_drop_geometry(mapdon[12:50]))
-matdon <- 100 * matdon / apply(matdon, 1, sum)
-rownames(matdon) <- mapdon$circ
-colnames(matdon) <- listes$tete_nom
+```{r data_circo}
+
+# Chargement des résultats par circonscription et d'un fond de carte
+map_circ <- readRDS("data/net/map_circ.RDS")
+don_circ <- readRDS("data/net/don_circ.RDS")
+
+# Calcul répartition % de vote par circonscription pour chaque liste
+result_vote_circ <- don_circ[, 12:49]
+mat_vote_circ <- 100 * result_vote_circ / apply(result_vote_circ, 1, sum) 
+rownames(mat_vote_circ) <- don_circ$circ
+colnames(mat_vote_circ) <- listes$tete_nom
 
 # Dissimilarité
-dissim <- dist.ldc(matdon, method = "manhattan") / 2
+dissim <- dist.ldc(mat_vote_circ, method = "manhattan") / 2
 ```
 
-On prépare ensuite la la matrice de contiguïté des circonscriptions en suivant là encore la procédure utilisée pour les départements :
+On prépare ensuite la la matrice de contiguïté des circonscriptions en suivant là encore la procédure utilisée pour les départements  (cf. [partie 2.3](#matrice-de-contiguïté)).
 
 ```{r carte_contig_circo}
 #| out-width: 80%
 #| fig-align: center
 
+# Jointure fond de carte et résultat de vote
+mapdon_circ <- left_join(map_circ, don_circ)
 
-# Contiguïté
-cont <- poly2nb(mapdon)
-contw <- nb2listw(cont)
+# Matrice de contiguïté
+mat_conti <- st_intersects(mapdon_circ, mapdon_circ, sparse = FALSE)
+colnames(mat_conti) <- mapdon_circ$circ
+rownames(mat_conti) <- mapdon_circ$circ
 
-# Extrait les liens
-linky <- nb2mat(cont)
-matlink1 <- linky
-matlink1[linky > 0] <- 1
-colnames(matlink1) <- row.names(matlink1)
-link1 <- melt(matlink1) %>% filter(value > 0) %>% select(i = Var1, j = Var2)
+# Suppression de la moitié de la matrice (et de la diagonale)
+mat_conti[lower.tri(mat_conti, diag = TRUE)] <- FALSE
 
+# Construction d'un tableau de lien (i, j) de contiguïté
+circ_link_contig <- as.data.frame.table(mat_conti, responseName = "contig") |> 
+                             filter(contig == TRUE)
 
-## Calcule les centroïdes
-mapctr <- st_centroid(mapdon)
-ctr <- st_coordinates(mapctr)
-
-# Visualise le graphe
-mf_map(mapdon, type = "base", col = "lightyellow")
-segments(ctr[link1[, 1], 1] , ctr[link1[, 1], 2], ctr[link1[, 2], 1] , ctr[link1[, 2], 2], col =
-           "red", lwd = 0.6)
-#mf_map(mapctr, type="base",pch=20,col="white", add=T, cex=5)
-#mf_label(mapctr, var="dept", col="blue",cex=0.7,halo = T,bg = "white")
-mf_layout("Matrice de contiguïté des circonscriptions",
-          frame = T,
-          credits = "Grasland C., 2025")
+# Création de la couche géographique de liens
+circ_links_contig  <- mf_get_links(x = mapdon_circ, 
+                                  df = circ_link_contig, 
+                                  x_id = "circ", 
+                                  df_id = c("Var1","Var2"))
+     
+# Cartographie
+mf_map(mapdon_circ,col="lightyellow")
+mf_map(circ_links_contig , col = "red3", add = TRUE)
+mf_layout("Matrice de contiguïté des circonscriptions", credits = "Grasland C., 2025")
 ```
 
-Pour mieux visualiser les zones urbaines, on peut créer une carte par anamorphose à l'aide de la procédure `cartogramR()` du package cartogramR. On prend comme variable de poids le nombre de votants ce qui donne des surfaces approximativement égales auw unités spatiales.
+Pour mieux visualiser les zones urbaines, on peut créer une carte par anamorphose à l'aide de la fonction `cartogramR()` du package du même nom. On prend comme variable de poids le nombre de votants ce qui donne des surfaces approximativement égales aux unités spatiales.
 
 ```{r cartogram}
 #| out-width: 80%
 #| fig-align: center
 
-library(cartogramR)
-mapdon2 <- cartogramR(
-  mapdon,
-  count = "vot",
-  method = "dcn",
-  options = list(L = 4096, maxit = 100)
-)$cartogram %>% st_as_sf()
+# Construction du cartogramme en fonction du nombre de votants
+cartogram_R <- cartogramR(mapdon_circ,
+                          count = "vot",
+                          method = "dcn",
+                          options = list(L = 4096, maxit = 200))$cartogram |>
+                st_as_sf()
 
-## Calcule les centroïdes
-mapctr2 <- st_centroid(mapdon2)
-ctr2 <- st_coordinates(mapctr2)
 
-mf_map(mapdon2, type = "base", col = "lightyellow")
-segments(ctr2[link1[, 1], 1] , ctr2[link1[, 1], 2], ctr2[link1[, 2], 1] , ctr2[link1[, 2], 2], col =
-           "red", lwd = 0.4)
-#mf_map(mapctr, type="base",pch=20,col="white", add=T, cex=5)
-#mf_label(mapctr, var="dept", col="blue",cex=0.7,halo = T,bg = "white")
-mf_layout(
-  "Matrice de contiguïté des circonscriptions (anamorphosée)",
-  frame = T,
-  credits = "Grasland C., 2025"
-)
+# Jointure cartogramme et résultats de vote
+cartogram_circ <- left_join(cartogram_R, don_circ)
+
+# Matrice de contiguïté du cartogramme
+mat_conti <- st_intersects(cartogram_circ, cartogram_circ, sparse = FALSE)
+colnames(mat_conti) <- cartogram_circ$circ
+rownames(mat_conti) <- cartogram_circ$circ
+
+# Suppression de la moitié de la matrice (et de la diagonale)
+mat_conti[lower.tri(mat_conti, diag = TRUE)] <- FALSE
+
+# Construction d'un tableau de lien (i, j) de contiguïté
+circ_link_contig <- as.data.frame.table(mat_conti, responseName = "contig") |> 
+                             filter(contig == TRUE)
+
+# Création de la couche géographique de liens
+circ_links_contig  <- mf_get_links(x = cartogram_circ, 
+                                  df = circ_link_contig, 
+                                  x_id = "circ", 
+                                  df_id = c("Var1","Var2"))
+
+mf_map(cartogram_R, col = "lightyellow")
+mf_map(circ_links_contig , col = "red3", add = TRUE)
+mf_layout("Matrice de contiguïté des circonscriptions (anamorphosée)",
+           credits = "Grasland C., 2025")
 
 ```
 
@@ -1469,12 +1510,15 @@ La classification fait nettement ressortir une division en 4 classes, sans ruptu
 #| out.width: 100%
 #| layout: [[50,50]]
 
+# Classification
 cah <- hclust(dissim, method = "ward.D")
-plot(cah,
-     hang = -1,
-     cex = 0.5,
-     main = "Arbre de classification")
 
+
+## A. Arbre CAH - Dissimilarité 
+plot(cah, hang = -1, cex = 0.5, main = "Arbre de classification")
+# ---
+
+# B. Carte - CAH - Dissimilarité 
 barplot(rev(cah$height)[1:15],
         names.arg = 1:15,
         cex.names = 0.6)
@@ -1486,74 +1530,82 @@ La cartographie de ces classes met en évidence une coupure évidente entre les 
 #| out.width: 100%
 #| layout: [[50,50]]
 
+
+# Découpage en 4 classes
 clas <- as.factor(cutree(cah, 4))
 levels(clas) <- c("Metrop. 1", "Metrop. 2", "Periph. 1", "Periph. 2")
-mapdon$cah <- clas
-mapdon2$cah <- clas
+mapdon_circ$cah <- clas
+cartogram_R$cah <- clas
+
+# Création d'unee palette de couleur
 mypal <- c("red", "orange", "lightgreen", "darkgreen")
 
-mf_map(
-  mapdon,
-  type = "typo",
-  var = "cah",
-  leg_title = "Classes",
-  lwd = 0.5,
-  leg_pos = "bottomleft",
-  pal = mypal
-)
+# Carte - découpage réel des circonscriptions
+mf_map(mapdon_circ,
+       type = "typo",
+       var = "cah",
+       leg_title = "Classes",
+       lwd = 0.5,
+       leg_pos = "bottomleft",
+      pal = mypal)
 
-mf_layout(
-  "Classification des circonscription",
-  credits = "Mehode de Ward appliquée à la distance de divergence",
-  frame = T,
-  scale = T,
-  arrow = F
-)
+mf_layout(title = "Classification des circonscriptions",
+          credits = "Mehode de Ward appliquée à la distance de divergence",
+          arrow = FALSE)
+# ---
 
-mf_map(
-  mapdon2,
-  type = "typo",
-  var = "cah",
-  leg_title = "Classes",
-  lwd = 0.5,
-  leg_pos = "bottomleft",
-  pal = mypal
-)
 
-mf_layout(
-  "Classification des circonscription (anamorph.)",
-  credits = "Mehode de Ward appliquée à la distance de divergence",
-  frame = T,
-  scale = T,
-  arrow = F
-)
+# Carte - cartogramme en fonction du nombre de votants
+mf_map(cartogram_R,
+       type = "typo",
+       var = "cah",
+       leg_title = "Classes",
+       lwd = 0.5,
+       leg_pos = "bottomleft",
+       pal = mypal)
+
+mf_layout(title = "Classification des circonscriptions (anamorphose)",
+          credits = "Mehode de Ward appliquée à la distance de divergence",
+          arrow = FALSE)
 ```
 
-Le profil des quatre classes est assez simple à interpréter puisqu'ils'ordonne presque parfaitement en fonction du score de la liste du RN de Bardella.
+Le profil des quatre classes est assez simple à interpréter puisqu'il s'ordonne presque parfaitement en fonction du score de la liste du RN de Bardella.
 
 ```{r ecart_profil_moy_circo}
 
-tabres <- data.frame(matdon)
-tot <- as.numeric(tabres %>% summarise_all(.funs = c("mean")))
+# Calcul % national de vote
+tabres <- data.frame(mat_vote_circ) 
+tot <- tabres |>  summarise_all(.funs = c("mean"))
+
+# Récupération de la classe d'appartenance
 tabres$clas <- clas
-res <- tabres %>% group_by(clas) %>% summarise_all(.funs = c("mean"))
+
+# Moyenne % vote pour chaque classeclasse
+res <- tabres |> group_by(clas) |> summarise_all(.funs = c("mean"))
+
+# Calcul écarts des classes au profil moyen
 mat <- res[, -1]
-for (i in 1:4) {
-  mat[i, ] <- mat[i, ] - as.matrix(tot)
-}
-mat <- t(mat)
+for (i in 1:5) {mat[i, ] <- mat[i, ] - as.matrix(tot)}
+mat <- as.data.frame(t(mat))
 colnames(mat) <- c("Metrop.1", "Metrop.2", "Periph.1", "Periph.2")
-mat <- as.data.frame(mat)
-mat$Profil <- tot
+
+# Ajout ligne de totaux
+mat$Profil <- as.numeric(tot)
+```
+
+**Écart des régions au profil moyen** (listes principales) :
+
+```{r ana_profil_circ_table}
+#| echo: false
 mat <- mat[order(-mat$Profil), ]
-kable(mat[1:13, ], digits = 2, caption = "Ecart des classes au profil moyen (listes principales)")
+kable(mat[1:13, ], digits = 2)
 ```
 
 ::: {.alert .alert-success role="alert"}
--   **Les espaces métropolitains centraux (Metrop. 1)** votent beaucoup moins pour le rssembelemnt National (Bardella) et les partis à implantation régionale (Lassalle, Deffontaines), privilégiant les partis traditonnels de gouvernement (Hayer, Glucksman, Bellamy) ainsi que les écologistes (Toussaint), LFI (Aubry) ou la liste d'extrême-droite de Marechal.
+-   **Les espaces métropolitains centraux (Metrop. 1)** votent beaucoup moins pour le rassemblement National (Bardella) et les partis à implantation régionale (Lassalle, Deffontaines), privilégiant les partis traditionnels de gouvernement (Hayer, Glucksman, Bellamy) ainsi que les écologistes (Toussaint), LFI (Aubry) ou la liste d'extrême-droite de Marechal.
 -   **Les espaces métropolitains périphériques (Metrop. 2)** correspondent aux zones d'implantation privilégiée de la France insoumise (Aubry), associée à une surreprésentation légère des votes communistes ou écologistes.
 -   **Les espaces périphériques intégrés (Periph. 1)** ont un profil moyen avec une légère sur-représentation des votes pour les partis de centre-droit ou de centre-gauche ainsi que des listes régionalistes (Lassalle).
--   **Les espaces périphériques marginalisés (Periph. 2)** se caractérisent par une forte surrepéresentation du vote Bardella et une faiblesse du vote pour l'ensemble des autres partis de gouvernement.
+-   **Les espaces périphériques marginalisés (Periph. 2)** se caractérisent par une forte surreprésentation du vote Bardella et une faiblesse du vote pour l'ensemble des autres partis de gouvernement.
 :::
 
 ## Régionalisation
@@ -1564,24 +1616,27 @@ Comme on peut le constater, cette configuration des classes est a priori très d
 #| out-width: 80%
 #| fig-align: center
 
-# Met en colonnes la matrice de dissimilarité
+# Conversion de la matrice de dissimilarité en tableau long
 m <- as.matrix(dissim)
-tabdis <- melt(m, as.is = TRUE)
-names(tabdis) <- c("i", "j", "DSij")
+tab_dis <- cbind(expand.grid(dimnames(m)), value = as.vector(m))
+names(tab_dis ) <- c("i", "j", "DSij")
 
-# Extrait les frontières d'unités spatiale
-#library(cartography)
-maplim <- getBorders(mapdon)
-names(maplim) <- c("codelim", "i", "j", "geometry")
+# Extraction des frontières d'unités spatiale
+map_border_circ <- mf_get_borders(mapdon_circ)[, c("circ", "circ.1")]
+names(map_border_circ) <- c("i", "j", "geometry")
 
-# Effectue la jointure
-maplim <- merge(maplim, tabdis, by = c("i", "j"))
+# Jointure
+map_border_circ <- merge(map_border_circ, tab_dis, by = c("i", "j"))
 
-# Visualise les dissimilarités les plus fortes
-mf_map(mapdon, type="base",col="lightyellow")
-mf_map(maplim, type="prop", col="red",var="DSij", val_max = 70, leg_pos = "left")
-mf_layout("Cartographie des discontinuités", frame=T, 
-          credits = "Grasland C., 2025")
+# Cartographie des dissimilarités les plus fortes
+mf_map(mapdon_circ, type = "base", col = "lightyellow")
+mf_map(map_border_circ,
+       type = "prop",
+       col = "red",
+       var = "DSij",
+       val_max = 70,
+       leg_pos = "left")
+mf_layout("Cartographie des discontinuités", frame = TRUE, credits = "Grasland C., 2025")
 
 ```
 
@@ -1591,47 +1646,55 @@ L'application de l'algorithme de régionalisation conduit pourtant à identifier
 #| out.width: 100%
 #| layout: [[50,50]]
 
-neighbors <- listw2sn(contw)[, 1:2]
-regio <- constr.hclust(d = dissim, method = "ward.D", links = neighbors)
+# Régionalisation ascendante hiérarchique
+regio <- constr.hclust(d = dissim, method = "ward.D", links = circ_link_contig)
 
+# A. Arbre de classification
 plot(regio,
      main = "Arbre de classification",
      hang = -1,
      cex = 0.7)
+# ---
 
-barplot(
-  rev(regio$height)[1:20],
-  main = "Hiérarchie des noeuds",
-  names.arg = 1:20,
-  cex.names = 0.4
-)
-
+# B. Hiérarchie des noeuds
+barplot(rev(regio$height)[1:20],
+        main = "Hiérarchie des noeuds",
+        names.arg = 1:20,
+        cex.names = 0.4)
 ```
 
-La cartogaphie des découpages en 5 et 11 régions produit des résultats intéressants même si leur pouvoir explicatif est plus faible que celui de la classification.
+La cartographie des découpages en 5 et 11 régions produit des résultats intéressants même si leur pouvoir explicatif est plus faible que celui de la classification.
+
 
 ```{r map_class_circo}
 #| out.width: 100%
 #| layout: "[[50,50], [50,50]]"
 
-mapdon$reg5 <- as.factor(cutree(regio, 5))
-mapdon$reg11 <- as.factor(cutree(regio, 11))
-mapdon2$reg5 <- as.factor(cutree(regio, 5))
-mapdon2$reg11 <- as.factor(cutree(regio, 11))
+# Découpage en 5 classes
+mapdon_circ$reg5 <- as.factor(cutree(regio, 5))
+cartogram_R$reg5 <- as.factor(cutree(regio, 5))
 
-mf_map(mapdon, var="reg5",type="typo", leg_title = "Classes",lwd=0.4)
+# Découpage en 11 classes
+mapdon_circ$reg11 <- as.factor(cutree(regio, 11))
+cartogram_R$reg11 <- as.factor(cutree(regio, 11))
+
+# 1.a CAH - 5 classes
+mf_map(mapdon_circ, var="reg5",type="typo", leg_title = "Classes",lwd=0.4)
 mf_layout("5 régions",credits = "", scale=T, frame=T, arrow=F)
 # --- 
 
-mf_map(mapdon2, var="reg5",type="typo", leg_title = "Classes", lwd=0.4)
+# 1.b CAH - 5 classes
+mf_map(cartogram_R, var="reg5",type="typo", leg_title = "Classes", lwd=0.4)
 mf_layout("5 régions",credits = "", scale=T, frame=T, arrow=F)
 # --- 
 
-mf_map(mapdon, var="reg11",type="typo", leg_title = "Classes", lwd=0.4)
+# 2.a CAH - 11 classes
+mf_map(mapdon_circ, var="reg11",type="typo", leg_title = "Classes", lwd=0.4)
 mf_layout("11 régions",credits = "", scale=T, frame=T, arrow=F)
 # --- 
 
-mf_map(mapdon2, var="reg11",type="typo", leg_title = "Classes", lwd=0.4)
+# 2.b CAH - 11 classes
+mf_map(cartogram_R, var="reg11",type="typo", leg_title = "Classes", lwd=0.4)
 mf_layout("11 régions",credits = "", scale=T, frame=T, arrow=F)
 ```
 
@@ -1675,31 +1738,31 @@ map <- st_read("data/raw/france-circonscriptions-legislatives-2012.json")
 meta <- readxl::read_xlsx("data/raw/circo_composition.xlsx", sheet= "table") 
 
 # Harmonise les noms et codes de départements et régions
-meta <- meta %>%
+meta <- meta |>
           select(circ=circo, 
                  dept= DEP,
                  dept_nom=libdep, 
                  regi=REG, 
-                 regi_nom = libreg) %>%
-          filter(substr(circ, 1, 2) == dept) %>%   # CORRIGE DES ERREURS DE CODAGE DE L'INSEE
+                 regi_nom = libreg) |>
+          filter(substr(circ, 1, 2) == dept) |>   # CORRIGE DES ERREURS DE CODAGE DE L'INSEE
           unique()
 
 
 # Crée la carte des circonscriptions
-map_circ <- map %>% 
-              mutate(circ = ID) %>%
-              select(circ) %>%
-              left_join (meta) %>%     
+map_circ <- map |> 
+              mutate(circ = ID) |>
+              select(circ) |>
+              left_join (meta) |>     
               filter(nchar(dept)<3,                      # Élimine les DROM
-                     !dept %in% c("2A", "2B")) %>%       # Élimine la Corse
-              arrange(regi, dept,circ) %>%
+                     !dept %in% c("2A", "2B")) |>       # Élimine la Corse
+              arrange(regi, dept,circ) |>
               st_transform(2154)                         # Change la projection
 
 saveRDS(map_circ, "data/net/map_circ.RDS")
 
-# Agrège par département 
-map_dept <- map_circ %>% 
-                group_by(dept) %>%
+# Agrégation par département 
+map_dept <- map_circ |> 
+                group_by(dept) |>
                 summarize(dept_nom = min(dept_nom),
                           regi = min(regi),
                           regi_nom = min(regi_nom), 
@@ -1707,9 +1770,9 @@ map_dept <- map_circ %>%
 
 saveRDS(map_dept, "data/net/map_dept.RDS")
 
-# Agrège par région
-map_regi <- map_dept %>% 
-                group_by(regi) %>%
+# Agrégation par région
+map_regi <- map_dept |> 
+                group_by(regi) |>
                 summarise(regi_nom = min(regi_nom), 
                           .groups = "drop") 
 
@@ -1727,7 +1790,7 @@ map_circ <- readRDS("data/net/map_circ.RDS")
 map_dept <- readRDS("data/net/map_dept.RDS")
 map_regi <- readRDS("data/net/map_regi.RDS")
 
-# Vérification du fonds de carte
+# Vérification des fonds de carte
 mf_map(map_circ, type = "base", col="lightyellow", border="gray80", lwd=0.4)
 mf_map(map_dept, type = "base", col=NA, border="gray50", lwd=0.8, add=T)
 mf_map(map_regi, type = "base", col=NA, border="gray20", lwd=1.6, add=T)
@@ -1751,7 +1814,7 @@ x$circ <- paste0(substr(z, 1, 2), "0", substr(z, 3, 4))
 
 
 # Variables générales
-gen <- x  %>% 
+gen <- x  |> 
        select(circ ,
               ins = Inscrits,
               vot = Votants,
@@ -1782,19 +1845,19 @@ saveRDS(don_circ, "data/net/don_circ.RDS")
 kable(head(don_circ), caption = "Résultats électoraux par circonscription")
 
 # Agrégation par départements
-don_dept <- don_circ %>% group_by(dept, dept_nom, regi, regi_nom) %>% summarise_at(2:45, sum) %>% ungroup()
+don_dept <- don_circ |> group_by(dept, dept_nom, regi, regi_nom) |> summarise_at(2:45, sum) |> ungroup()
 
 saveRDS(don_dept, "data/net/don_dept.RDS")
 kable(head(don_dept), caption = "Résultats électoraux par département")
 
 # Agrégation par régions
-don_regi <- don_circ %>% group_by(regi, regi_nom) %>% summarise_at(4:47, sum) %>% ungroup() 
+don_regi <- don_circ |> group_by(regi, regi_nom) |> summarise_at(4:47, sum) |> ungroup() 
 saveRDS(don_regi, "data/net/don_regi.RDS")
 kable(head(don_regi), caption = "Résultats électoraux par région")
 
 # Métadonnées sur les têtes de listes
 m <- readxl::read_xlsx("data/raw/candidats-eur-2024.xlsx")
-m <- m %>% filter(Ordre == 1) %>%
+m <- m |> filter(Ordre == 1) |>
   select(
     code = `Numéro de panneau`,
     nom = `Libellé de la liste`,
@@ -1824,6 +1887,11 @@ On vérifie tout d'abord que la procédure d'agrégation a bien donné bien les 
 don_circ <- readRDS("data/net/don_circ.RDS")
 don_dept <- readRDS("data/net/don_dept.RDS")
 don_regi <- readRDS("data/net/don_regi.RDS")
+```
+
+Vérification des sommes
+
+```{r  check_data_raw}
 sum(don_circ$ins)
 sum(don_dept$ins)
 sum(don_regi$ins)
@@ -1841,12 +1909,12 @@ map_dept <- readRDS("data/net/map_dept.RDS")
 map_regi <- readRDS("data/net/map_regi.RDS")
 
 # Choix de la palette et des classes
-mypal <- brewer.pal(9, "Blues")
+mypal <- hcl.colors(n = 9, palette = "Blues")
 mybreaks = c(0, 15, 20, 25, 30, 35, 40, 45, 50, 100)
 
 # Carte par région
-mapdon <- left_join(map_regi, don_regi) %>%
-  mutate(vot = vot5, pct = 100 * vot5 / exp) %>%
+mapdon <- left_join(map_regi, don_regi) |>
+  mutate(vot = vot5, pct = 100 * vot5 / exp) |>
   select(vot, pct)
 ```
 
@@ -1884,9 +1952,9 @@ mf_layout(
 )
 
 # Carte par département
-mapdon <- left_join(map_dept, don_dept) %>%
-  mutate(vot = vot5, pct = 100 * vot5 / exp) %>%
-  select(vot, pct)
+mapdon <- left_join(map_dept, don_dept) |>
+              mutate(vot = vot5, pct = 100 * vot5 / exp) |>
+              select(vot, pct)
 
 mf_map(
   mapdon,
@@ -1916,10 +1984,10 @@ mf_layout(
 )
 
 # Carte par circonscription (zoom sur l'Occitanie)
-mapdon <- left_join(map_circ, don_circ) %>%
-  filter(regi_nom == "Occitanie") %>%
-  mutate(vot = vot5, pct = 100 * vot5 / exp) %>%
-  select(vot, pct)
+mapdon <- left_join(map_circ, don_circ) |>
+                filter(regi_nom == "Occitanie") |>
+                mutate(vot = vot5, pct = 100 * vot5 / exp) |>
+                select(vot, pct)
 
 mf_map(
   mapdon,

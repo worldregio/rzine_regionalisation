@@ -6,7 +6,7 @@
 Résumé de la fiche....
 
 
-Pour la consulter, cliquez [**ici**](https://huguespecout.github.io/rzine_regionalisation/)
+Pour la consulter, cliquez [**ici**](https://rzine-reviews.github.io/rzine_regionalisation/)
 
 <br/>  
 
